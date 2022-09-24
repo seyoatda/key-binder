@@ -7,7 +7,7 @@ use once_cell::sync::Lazy;
 use windows::Win32::UI::Input::KeyboardAndMouse::{KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP};
 
 use super::key_enums::*;
-use crate::win_func::*;
+use crate::key::win::*;
 
 impl Key for VirtualKey {
     fn is_pressed(&self) -> bool {

@@ -1,9 +1,12 @@
 use serde::{Serialize, Deserialize};
 use num_enum::TryFromPrimitive;
 
+/// define virtual keys and related code in win
+///
 #[derive(Debug, Eq, PartialEq, Hash, TryFromPrimitive, Clone, Copy, Serialize, Deserialize)]
 #[repr(u32)]
 pub enum VirtualKey {
+    // function keys
     Backspace = 0x08,
     Tab = 0x09,
     Enter = 0x0D,
@@ -23,6 +26,7 @@ pub enum VirtualKey {
     RightArrow = 0x27,
     DownArrow = 0x28,
 
+    // numbers in main area
     Key0 = 0x30,
     Key1 = 0x31,
     Key2 = 0x32,
@@ -34,6 +38,7 @@ pub enum VirtualKey {
     Key8 = 0x38,
     Key9 = 0x39,
 
+    // characters
     KeyA = 0x41,
     KeyB = 0x42,
     KeyC = 0x43,
@@ -61,6 +66,7 @@ pub enum VirtualKey {
     KeyY = 0x59,
     KeyZ = 0x5A,
 
+    // control keys
     LeftShift = 0xA0,
     RightShift = 0xA1,
     LeftControl = 0xA2,
@@ -70,6 +76,7 @@ pub enum VirtualKey {
     Unknown = 0x0,
 }
 
+/// define actions of key in win event
 #[derive(Debug, Eq, PartialEq, TryFromPrimitive)]
 #[repr(u32)]
 pub enum KeyAction {
@@ -80,6 +87,7 @@ pub enum KeyAction {
     Unknown = 0x0,
 }
 
+/// define key status
 #[derive(Debug, Eq, PartialEq, TryFromPrimitive)]
 #[repr(u32)]
 pub enum KeyStatus {
@@ -89,11 +97,20 @@ pub enum KeyStatus {
     Unknown,
 }
 
-
+/// a key trait
 pub trait Key {
+
+    /// check if this key is pressed
     fn is_pressed(&self) -> bool;
+
+    /// check if this key is released. a reverse function from is_pressed
     fn is_released(&self) -> bool;
+
+    /// send a press event of this key to system
+    /// to simulated a real key press
     fn press(&self);
+
+    /// bind a function to this key, if the key was pressed then the function will be called.
     fn on_pressed(&self, func: &dyn Fn() -> ());
 }
 

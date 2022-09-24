@@ -1,23 +1,19 @@
-pub mod key_enums;
-pub mod key_func;
-mod win_func;
+pub mod key;
+
 mod config;
 
 
 use std::path::Path;
-use key_enums::{Key, VirtualKey as Vk};
-use key_func::*;
-use win_func::*;
+use key::VirtualKeySet;
+use key::VirtualKey;
+use key::bind_key_sets;
+
 use crate::config::Config;
 use crate::config::read_config;
 
 fn main() {
-    when_keys_pressed(&[Vk::CapsLock, Vk::KeyH], || {
-        Vk::LeftArrow.press();
-    });
     init_key_mappings();
-
-    listen_event();
+    key::listen_event();
 }
 
 fn init_key_mappings() {

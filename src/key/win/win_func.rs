@@ -1,5 +1,5 @@
-use crate::key_enums::{KeyAction, KeyStatus, VirtualKey};
-use crate::key_func::{KEY_SET_MAP, KEY_STATUS_MAP};
+use crate::key::{KeyAction, KeyStatus, VirtualKey};
+use crate::key::{KEY_SET_MAP, KEY_STATUS_MAP};
 use once_cell::sync::OnceCell;
 use std::mem::size_of;
 use windows::Win32::Foundation::HWND;
