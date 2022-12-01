@@ -98,3 +98,7 @@ pub fn listen_event() {
         println!("getMessageW: {}", success.0);
     }
 }
+
+pub fn stop_listening() {
+    unset_hook(&KEYBD_HHOOK);
+}

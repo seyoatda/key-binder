@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use num_enum::TryFromPrimitive;
 
-/// define virtual keys and related code in win
+/// define virtual keys and related code in windows OS
 ///
 #[derive(Debug, Eq, PartialEq, Hash, TryFromPrimitive, Clone, Copy, Serialize, Deserialize)]
 #[repr(u32)]

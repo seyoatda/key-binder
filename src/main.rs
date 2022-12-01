@@ -22,3 +22,5 @@ fn init_key_mappings() {
         bind_key_sets(x.origin.keys.as_slice(), x.mapping.keys.as_slice())
     }
 }
+
+fn

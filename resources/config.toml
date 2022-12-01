@@ -27,4 +27,3 @@ mapping.keys = ["End"]
 [[key_mappings]]
 origin.keys = ["CapsLock", "Enter"]
 mapping.keys = ["Enter", "End"]
-
