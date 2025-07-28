@@ -139,32 +139,30 @@ impl GuiApp {
         let key_icon = self.get_key_icon(key);
         let key_size = egui::vec2(50.0, 50.0);
 
-        // 创建按键背景
-        let button_color = egui::Color32::from_rgba_unmultiplied(45, 45, 45, (220.0 * alpha) as u8);
-        let border_color =
-            egui::Color32::from_rgba_unmultiplied(100, 100, 100, (255.0 * alpha) as u8);
+        // 创建蓝色按键背景（类似图片风格）
+        let button_color = egui::Color32::from_rgba_unmultiplied(70, 130, 255, (220.0 * alpha) as u8); // 蓝色背景
+        let border_color = egui::Color32::from_rgba_unmultiplied(0, 0, 0, (255.0 * alpha) as u8); // 深蓝色边框
 
         let (rect, _) = ui.allocate_exact_size(key_size, egui::Sense::hover());
 
-        // 绘制按键背景和边框
+        // 绘制按键背景和边框（更大的圆角）
         ui.painter()
-            .rect_filled(rect, egui::CornerRadius::same(8), button_color);
+            .rect_filled(rect, egui::CornerRadius::ZERO, button_color); // 增大圆角半径
         ui.painter().rect_stroke(
             rect,
-            egui::CornerRadius::same(8),
-            egui::Stroke::new(2.0, border_color),
-            egui::StrokeKind::Inside,
+            egui::CornerRadius::same(10),
+            egui::Stroke::new(10.0, border_color),
+            egui::StrokeKind::Outside
         );
 
-        // 绘制按键图标/文字
-        let text_color =
-            egui::Color32::from_rgba_unmultiplied(255, 255, 255, (255.0 * alpha) as u8);
+        // 绘制按键图标/文字（白色文字）
+        let text_color = egui::Color32::from_rgba_unmultiplied(255, 255, 255, (255.0 * alpha) as u8);
 
         ui.painter().text(
             rect.center(),
             egui::Align2::CENTER_CENTER,
             key_icon,
-            egui::FontId::proportional(16.0),
+            egui::FontId::proportional(18.0), // 稍微增大字体
             text_color,
         );
     }
