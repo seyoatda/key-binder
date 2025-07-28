@@ -1,116 +1,175 @@
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(default)] // if we add new fields, give them default values when deserializing old state
-pub struct TemplateApp {
-    // Example stuff:
-    label: String,
+use crate::key::{VirtualKey, PRESSED_KEYS_STATE};
+use std::time::Instant;
 
-    // this how you opt-out of serialization of a member
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(default)]
+pub struct GuiApp {
+    label: String,
     #[serde(skip)]
     value: f32,
+    #[serde(skip)]
+    fade_start_time: Option<Instant>,
+    #[serde(skip)]
+    last_keys: Vec<VirtualKey>,
+    #[serde(skip)]
+    is_fading: bool,
 }
 
-impl Default for TemplateApp {
+impl Default for GuiApp {
     fn default() -> Self {
         Self {
-            // Example stuff:
             label: "Hello World!".to_owned(),
             value: 2.7,
+            fade_start_time: None,
+            last_keys: Vec::new(),
+            is_fading: false,
         }
     }
 }
 
-impl TemplateApp {
-    /// Called once before the first frame.
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        // This is also where you can customized the look at feel of egui using
-        // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
+impl eframe::App for GuiApp {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        // 持续刷新UI以实现动画效果
+        ctx.request_repaint();
 
-        // Load previous app state (if any).
-        // Note that you must enable the `persistence` feature for this to work.
-        if let Some(storage) = cc.storage {
-            return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+        let pressed_state = PRESSED_KEYS_STATE.lock().unwrap();
+        let current_keys: Vec<VirtualKey> = pressed_state.keys.iter().cloned().collect();
+        let should_show = pressed_state.should_show_ui;
+
+        // 检测按键释放，开始淡出动画
+        if !current_keys.is_empty() && !self.last_keys.is_empty() && current_keys != self.last_keys
+        {
+            // 按键组合发生变化，更新显示
+            self.last_keys = current_keys.clone();
+            self.is_fading = false;
+            self.fade_start_time = None;
+        } else if current_keys.is_empty() && !self.last_keys.is_empty() {
+            // 所有按键释放，开始淡出
+            if self.fade_start_time.is_none() {
+                self.fade_start_time = Some(Instant::now());
+                self.is_fading = true;
+            }
+        } else if !current_keys.is_empty() {
+            // 有按键按下，更新显示
+            self.last_keys = current_keys.clone();
+            self.is_fading = false;
+            self.fade_start_time = None;
         }
 
-        Default::default()
+        drop(pressed_state); // 释放锁
+
+        // 计算透明度
+        let alpha = if self.is_fading {
+            if let Some(fade_start) = self.fade_start_time {
+                let elapsed = fade_start.elapsed().as_millis() as f32;
+                let fade_duration = 1000.0; // 1秒淡出
+                (1.0 - (elapsed / fade_duration)).max(0.0)
+            } else {
+                1.0
+            }
+        } else if !self.last_keys.is_empty() {
+            1.0
+        } else {
+            0.0
+        };
+
+        // 如果完全透明且在淡出状态，清除按键记录
+        if alpha <= 0.0 && self.is_fading {
+            self.last_keys.clear();
+            self.is_fading = false;
+            self.fade_start_time = None;
+        }
+
+        // 显示按键弹窗
+        if alpha > 0.0 && !self.last_keys.is_empty() {
+            self.show_key_popup(ctx, alpha);
+        }
     }
 }
 
-impl eframe::App for TemplateApp {
-    /// Called by the frame work to save state before shutdown.
-    fn save(&mut self, storage: &mut dyn eframe::Storage) {
-        eframe::set_value(storage, eframe::APP_KEY, self);
-    }
+impl GuiApp {
+    fn show_key_popup(&self, ctx: &egui::Context, alpha: f32) {
+        let screen_rect = ctx.screen_rect();
+        println!("screen_rect: {:?}", screen_rect);
+        // 计算按键显示的总宽度
+        let key_width = 50.0;
+        let spacing = 10.0;
+        let total_width = (self.last_keys.len() as f32) * key_width
+            + ((self.last_keys.len() - 1) as f32) * spacing;
+        // this popup should be in parent viewport center
+        
 
-    /// Called each time the UI needs repainting, which may be many times per second.
-    /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let Self { label, value } = self;
+        // 位置在屏幕居中偏下
+        let popup_pos = egui::pos2(
+            screen_rect.center().x - total_width / 2.0,
+            screen_rect.max.y - 150.0,
+        );
 
-        // Examples of how to create different panels and windows.
-        // Pick whichever suits you.
-        // Tip: a good default choice is to just keep the `CentralPanel`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
+        // 使用Area代替Window，实现无边框悬浮
+        egui::Area::new(egui::Id::new("key_display"))
+            .order(egui::Order::Foreground)
+            .fixed_pos(popup_pos)
+            .show(ctx, |ui| {
+                ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                    for (i, key) in self.last_keys.iter().enumerate() {
+                        if i > 0 {
+                            // 添加连接符
+                            ui.add_space(5.0);
+                            ui.label(
+                                egui::RichText::new("+")
+                                    .color(egui::Color32::from_rgba_unmultiplied(
+                                        255,
+                                        255,
+                                        255,
+                                        (255.0 * alpha) as u8,
+                                    ))
+                                    .size(16.0),
+                            );
+                            ui.add_space(5.0);
+                        }
 
-        #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // The top panel is often a good place for a menu bar:
-            egui::menu::bar(ui, |ui| {
-                ui.menu_button("File", |ui| {
-                    if ui.button("Quit").clicked() {
-                        _frame.close();
+                        // 绘制按键
+                        self.draw_key_button(ui, key, alpha);
                     }
                 });
             });
-        });
+    }
 
-        egui::SidePanel::left("side_panel").show(ctx, |ui| {
-            ui.heading("Side Panel");
+    fn draw_key_button(&self, ui: &mut egui::Ui, key: &VirtualKey, alpha: f32) {
+        let key_icon = self.get_key_icon(key);
+        let key_size = egui::vec2(50.0, 50.0);
 
-            ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(label);
-            });
+        // 创建按键背景
+        let button_color = egui::Color32::from_rgba_unmultiplied(45, 45, 45, (220.0 * alpha) as u8);
+        let border_color =
+            egui::Color32::from_rgba_unmultiplied(100, 100, 100, (255.0 * alpha) as u8);
 
-            ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                *value += 1.0;
-            }
+        let (rect, _) = ui.allocate_exact_size(key_size, egui::Sense::hover());
 
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 0.0;
-                    ui.label("powered by ");
-                    ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-                    ui.label(" and ");
-                    ui.hyperlink_to(
-                        "eframe",
-                        "https://github.com/emilk/egui/tree/master/crates/eframe",
-                    );
-                    ui.label(".");
-                });
-            });
-        });
+        // 绘制按键背景和边框
+        ui.painter()
+            .rect_filled(rect, egui::CornerRadius::same(8), button_color);
+        ui.painter().rect_stroke(
+            rect,
+            egui::CornerRadius::same(8),
+            egui::Stroke::new(2.0, border_color),
+            egui::StrokeKind::Inside,
+        );
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
+        // 绘制按键图标/文字
+        let text_color =
+            egui::Color32::from_rgba_unmultiplied(255, 255, 255, (255.0 * alpha) as u8);
 
-            ui.heading("eframe template");
-            ui.hyperlink("https://github.com/emilk/eframe_template");
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/master/",
-                "Source code."
-            ));
-            egui::warn_if_debug_build(ui);
-        });
+        ui.painter().text(
+            rect.center(),
+            egui::Align2::CENTER_CENTER,
+            key_icon,
+            egui::FontId::proportional(16.0),
+            text_color,
+        );
+    }
 
-        if false {
-            egui::Window::new("Window").show(ctx, |ui| {
-                ui.label("Windows can be moved by dragging them.");
-                ui.label("They are automatically sized based on contents.");
-                ui.label("You can turn on resizing and scrolling if you like.");
-                ui.label("You would normally chose either panels OR windows.");
-            });
-        }
+    fn get_key_icon(&self, key: &VirtualKey) -> String {
+        return format!("{:?}", key);
     }
 }

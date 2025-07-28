@@ -1,13 +1,15 @@
+use chrono::Local;
+use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use std::thread;
 use std::{collections::HashMap, sync::Arc};
-use serde::{Serialize, Deserialize};
-use chrono::Local;
-use once_cell::sync::Lazy;
 use windows::Win32::UI::Input::KeyboardAndMouse::{KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP};
 
 use super::key_enums::*;
 use crate::key::win::*;
+use std::collections::HashSet;
+use std::time::Instant;
 
 impl Key for VirtualKey {
     fn is_pressed(&self) -> bool {
@@ -61,10 +63,13 @@ impl Key for VirtualKeySet {
         println!("{:?} is pressed", self.keys);
         return true;
     }
+
     fn is_released(&self) -> bool {
         !self.is_pressed()
     }
+
     fn press(&self) {}
+
     fn on_pressed(&self, func: &dyn Fn() -> ()) {
         if self.is_pressed() {
             func();
@@ -166,3 +171,44 @@ pub fn bind_key_sets(keys: &[VirtualKey], simulated_keys: &[VirtualKey]) {
         }
     })
 }
+
+// 添加新的结构体来跟踪当前按下的按键
+#[derive(Debug, Clone)]
+pub struct PressedKeysState {
+    pub keys: HashSet<VirtualKey>,
+    pub press_start_time: Instant,
+    pub should_show_ui: bool,
+}
+
+impl PressedKeysState {
+    pub fn new() -> Self {
+        Self {
+            keys: HashSet::new(),
+            press_start_time: Instant::now(),
+            should_show_ui: false,
+        }
+    }
+    
+    pub fn add_key(&mut self, key: VirtualKey) {
+        if self.keys.is_empty() {
+            self.press_start_time = Instant::now();
+        }
+        self.keys.insert(key);
+        self.should_show_ui = true;
+    }
+    
+    pub fn remove_key(&mut self, key: VirtualKey) {
+        self.keys.remove(&key);
+        if self.keys.is_empty() {
+            self.should_show_ui = false;
+        }
+    }
+    
+    pub fn is_empty(&self) -> bool {
+        self.keys.is_empty()
+    }
+}
+
+// 全局状态管理
+pub static PRESSED_KEYS_STATE: Lazy<Mutex<PressedKeysState>> = 
+    Lazy::new(|| Mutex::new(PressedKeysState::new()));
