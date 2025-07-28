@@ -90,7 +90,7 @@ impl eframe::App for GuiApp {
 impl GuiApp {
     fn show_key_popup(&self, ctx: &egui::Context, alpha: f32) {
         let screen_rect = ctx.screen_rect();
-        println!("screen_rect: {:?}", screen_rect);
+        // println!("screen_rect: {:?}", screen_rect);
         // 计算按键显示的总宽度
         let key_width = 50.0;
         let spacing = 10.0;
