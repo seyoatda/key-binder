@@ -28,6 +28,10 @@ impl Default for GuiApp {
 }
 
 impl eframe::App for GuiApp {
+    fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
+        egui::Rgba::TRANSPARENT.to_array()
+    }
+    
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         // 持续刷新UI以实现动画效果
         ctx.request_repaint();
@@ -97,7 +101,6 @@ impl GuiApp {
         let total_width = (self.last_keys.len() as f32) * key_width
             + ((self.last_keys.len() - 1) as f32) * spacing;
         // this popup should be in parent viewport center
-        
 
         // 位置在屏幕居中偏下
         let popup_pos = egui::pos2(
@@ -140,34 +143,93 @@ impl GuiApp {
         let key_size = egui::vec2(50.0, 50.0);
 
         // 创建蓝色按键背景（类似图片风格）
-        let button_color = egui::Color32::from_rgba_unmultiplied(70, 130, 255, (220.0 * alpha) as u8); // 蓝色背景
+        let button_color =
+            egui::Color32::from_rgba_unmultiplied(70, 130, 255, (220.0 * alpha) as u8); // 蓝色背景
         let border_color = egui::Color32::from_rgba_unmultiplied(0, 0, 0, (255.0 * alpha) as u8); // 深蓝色边框
 
         let (rect, _) = ui.allocate_exact_size(key_size, egui::Sense::hover());
 
         // 绘制按键背景和边框（更大的圆角）
-        ui.painter()
-            .rect_filled(rect, egui::CornerRadius::ZERO, button_color); // 增大圆角半径
         ui.painter().rect_stroke(
             rect,
-            egui::CornerRadius::same(10),
+            egui::CornerRadius::same(5),
             egui::Stroke::new(10.0, border_color),
-            egui::StrokeKind::Outside
+            egui::StrokeKind::Outside,
         );
+        ui.painter()
+            .rect_filled(rect, egui::CornerRadius::ZERO, button_color); // 增大圆角半径
 
         // 绘制按键图标/文字（白色文字）
-        let text_color = egui::Color32::from_rgba_unmultiplied(255, 255, 255, (255.0 * alpha) as u8);
+        let text_color =
+            egui::Color32::from_rgba_unmultiplied(255, 255, 255, (255.0 * alpha) as u8);
 
         ui.painter().text(
             rect.center(),
             egui::Align2::CENTER_CENTER,
             key_icon,
-            egui::FontId::proportional(18.0), // 稍微增大字体
+            egui::FontId::proportional(20.0), // 稍微增大字体
             text_color,
         );
     }
 
     fn get_key_icon(&self, key: &VirtualKey) -> String {
-        return format!("{:?}", key);
+        match key {
+            VirtualKey::LeftControl | VirtualKey::RightControl => "Ctrl".to_string(),
+            VirtualKey::LeftShift | VirtualKey::RightShift => "Shift".to_string(),
+            VirtualKey::Key0 => "0".to_string(),
+            VirtualKey::Key1 => "1".to_string(),
+            VirtualKey::Key2 => "2".to_string(),
+            VirtualKey::Key3 => "3".to_string(),
+            VirtualKey::Key4 => "4".to_string(),
+            VirtualKey::Key5 => "5".to_string(),
+            VirtualKey::Key6 => "6".to_string(),
+            VirtualKey::Key7 => "7".to_string(),
+            VirtualKey::Key8 => "8".to_string(),
+            VirtualKey::Key9 => "9".to_string(),
+            VirtualKey::KeyA => "A".to_string(),
+            VirtualKey::KeyB => "B".to_string(),
+            VirtualKey::KeyC => "C".to_string(),
+            VirtualKey::KeyD => "D".to_string(),
+            VirtualKey::KeyE => "E".to_string(),
+            VirtualKey::KeyF => "F".to_string(),
+            VirtualKey::KeyG => "G".to_string(),
+            VirtualKey::KeyH => "H".to_string(),
+            VirtualKey::KeyI => "I".to_string(),
+            VirtualKey::KeyJ => "J".to_string(),
+            VirtualKey::KeyK => "K".to_string(),
+            VirtualKey::KeyL => "L".to_string(),
+            VirtualKey::KeyM => "M".to_string(),
+            VirtualKey::KeyN => "N".to_string(),
+            VirtualKey::KeyO => "O".to_string(),
+            VirtualKey::KeyP => "P".to_string(),
+            VirtualKey::KeyQ => "Q".to_string(),
+            VirtualKey::KeyR => "R".to_string(),
+            VirtualKey::KeyS => "S".to_string(),
+            VirtualKey::KeyT => "T".to_string(),
+            VirtualKey::KeyU => "U".to_string(),
+            VirtualKey::KeyV => "V".to_string(),
+            VirtualKey::KeyW => "W".to_string(),
+            VirtualKey::KeyX => "X".to_string(),
+            VirtualKey::KeyY => "Y".to_string(),
+            VirtualKey::KeyZ => "Z".to_string(),
+            VirtualKey::Backspace => "Del".to_string(),
+            VirtualKey::Alt => "Alt".to_string(),
+            VirtualKey::Space => "Space".to_string(),
+            VirtualKey::UpArrow => "Up".to_string(),
+            VirtualKey::DownArrow => "Down".to_string(),
+            VirtualKey::LeftArrow => "Left".to_string(),
+            VirtualKey::RightArrow => "Right".to_string(),
+            // VirtualKey::KeyF1 => "F1".to_string(),
+            // VirtualKey::KeyF2 => "F2".to_string(),
+            // VirtualKey::KeyF3 => "F3".to_string(),
+            // VirtualKey::KeyF4 => "F4".to_string(),
+            // VirtualKey::KeyF5 => "F5".to_string(),
+            // VirtualKey::KeyF6 => "F6".to_string(),
+            // VirtualKey::KeyF7 => "F7".to_string(),
+            // VirtualKey::KeyF8 => "F8".to_string(),
+            // VirtualKey::KeyF9 => "F9".to_string(),
+            // VirtualKey::KeyF10 => "F10".to_string(),
+            _ => format!("{:?}", key),
+        }
     }
 }

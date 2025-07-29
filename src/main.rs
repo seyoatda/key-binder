@@ -29,8 +29,8 @@ fn main() {
             .with_titlebar_shown(false)
             .with_title_shown(false)
             .with_decorations(false)
-            // .with_position(Pos2::new(0.0, 800.0))
-            .with_transparent(true),
+            .with_transparent(true)
+            .with_window_level(egui::WindowLevel::AlwaysOnTop), // 确保窗口层级
         ..Default::default()
     };
 
@@ -42,6 +42,8 @@ fn main() {
             cc.egui_ctx.set_visuals(egui::Visuals {
                 window_fill: egui::Color32::TRANSPARENT,
                 panel_fill: egui::Color32::TRANSPARENT,
+                extreme_bg_color: egui::Color32::TRANSPARENT, // 添加这行
+                faint_bg_color: egui::Color32::TRANSPARENT,   // 添加这行
                 ..Default::default()
             });
             Ok(Box::new(GuiApp::default()))
